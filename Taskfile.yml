@@ -1,0 +1,91 @@
+# Taskfile for Mole local development.
+#
+# `task` is the go-task runner (https://taskfile.dev). Install it with
+# `brew install go-task` if you don't have it.
+#
+# This file complements the Makefile: the Makefile owns release/cross-compile
+# builds (`release-amd64` / `release-arm64`), while this file owns the local
+# dev loop - build the Go binaries from source and install them onto this
+# machine without downloading release assets.
+#
+#   task              # build analyze-go + status-go into bin/
+#   task install      # build, then install mole + mo + modules + binaries
+#                       to PREFIX (default /usr/local/bin) and CONFIG
+#                       (default ~/.config/mole). May prompt for sudo when
+#                       PREFIX is /usr/local/bin. Override the prefix with
+#                       `task install PREFIX=$HOME/.local/bin`.
+#   task --help       # list every task
+
+version: '3'
+
+vars:
+  # Where the `mole` and `mo` entry scripts are installed. /usr/local/bin
+  # requires sudo; point PREFIX at a user-writable dir to install sudo-free.
+  PREFIX: /usr/local/bin
+  # Where bin/, lib/, and the Go helper binaries are installed.
+  CONFIG: '{{.HOME}}/.config/mole'
+  # Strip debug info and DWARF tables, matching the Makefile build.
+  GOFLAGS: -ldflags="-s -w"
+
+tasks:
+  default:
+    desc: Build the Go binaries (analyze-go, status-go) for the local architecture
+    deps: [build]
+
+  mod-download:
+    desc: Download Go modules
+    cmds:
+      - go mod download
+
+  build:
+    desc: Build analyze-go and status-go into bin/ from source
+    deps: [mod-download]
+    cmds:
+      - go build {{.GOFLAGS}} -o bin/analyze-go ./cmd/analyze
+      - go build {{.GOFLAGS}} -o bin/status-go ./cmd/status
+
+  install:
+    desc: Build from source and install to local PREFIX + CONFIG (no release download)
+    deps: [build]
+    cmds:
+      # install.sh detects the just-built bin/analyze-go and bin/status-go and
+      # copies them locally instead of downloading release assets, so this is a
+      # fully offline, from-source local install. It reuses install.sh's atomic
+      # update, sudo handling, and SCRIPT_DIR rewrite - the same path a real
+      # install takes.
+      - ./install.sh --prefix {{.PREFIX}} --config {{.CONFIG}}
+
+  install-local:
+    desc: Alias for `task install`
+    cmds:
+      - task: install
+
+  run:
+    desc: Run mole from the source tree (pass args with -- <args>)
+    cmds:
+      - ./mole {{.CLI_ARGS}}
+
+  clean:
+    desc: Remove built Go binaries
+    cmds:
+      - rm -f bin/analyze-go bin/status-go bin/analyze-darwin-* bin/status-darwin-*
+
+  check:
+    desc: Run shell lint/check without formatting
+    cmds:
+      - ./scripts/check.sh --no-format
+
+  format:
+    desc: Format shell sources
+    cmds:
+      - ./scripts/check.sh --format
+
+  test:
+    desc: Run the Bats test suite (no-auth mode)
+    cmds:
+      - MOLE_TEST_NO_AUTH=1 ./scripts/test.sh
+
+  test-go:
+    desc: Run Go tests
+    cmds:
+      - go test ./...

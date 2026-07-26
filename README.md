@@ -103,6 +103,27 @@ Review [SECURITY.md](SECURITY.md) and [SECURITY_AUDIT.md](SECURITY_AUDIT.md) for
 - App leftovers: use `mo clean` when the app is already uninstalled, and `mo uninstall` when the app is still installed.
 - Navigation: Mole supports arrow keys and Vim bindings `h/j/k/l`.
 
+## Command Reference
+
+Every command is documented in [`docs/commands/`](docs/commands/README.md) with its synopsis, options, subcommands, examples, and source pointers. Quick index:
+
+| Command | Summary |
+| --- | --- |
+| `mo clean` | Free up disk space |
+| `mo uninstall` | Remove apps completely |
+| `mo optimize` | Refresh caches and services |
+| `mo analyze` | Explore disk usage |
+| `mo status` | Monitor system health |
+| `mo history` | Review cleanup activity |
+| `mo purge` | Remove old project artifacts |
+| `mo installer` | Find and remove installer files |
+| `mo touchid` | Configure Touch ID for sudo |
+| `mo completion` | Set up shell tab completion |
+| `mo update` | Update to latest version |
+| `mo remove` | Remove Mole from the system |
+
+Run `mo --help` to see the same list inline, and `mo --version` to print the installed version.
+
 ## Features in Detail
 
 ### Deep System Cleanup
